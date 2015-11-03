@@ -46,18 +46,27 @@ class ProgramSectionGraph:
         child_section = ProgramSection(self.pointer + '*')
         self.sectionMap[self.pointer + '*'] = child_section
         self.graph.add_node(child_section)
-        self.graph.add_edge(self.pointer, self.pointer + '*')
-        self.graph.add_edge(self.pointer, label)
+        self.graph.add_edge(self.sectionMap[self.pointer], child_section)
+        self.graph.add_edge(self.sectionMap[self.pointer], self.sectionMap[label])
         self.pointer = self.pointer + '*'
 
     def add_edge(self, label):
-        self.graph.add_edge(self.pointer, label)
+        print('label: ' + label)
+        self.graph.add_edge(self.sectionMap[self.pointer], self.sectionMap[label])
 
     def add_code_line(self, line):
         self.sectionMap[self.pointer].add_code_line(line)
     #return networkx object
     def getNetworkXGraph(self):
         return self.graph
+#takes in a list of re.compile objects, and a text to match against the re's
+def matchAgainstRegexList(reList, text):
+    for regex in reList:
+        match = regex.match(text)
+        if match != None:
+            return match
+
+    return False
 #pass in text of assembly
 #returns an instance of the ProgramSectionGraph class.
 def getGraph(mipsCode):
@@ -100,17 +109,18 @@ def getGraph(mipsCode):
 
     #now that we have a labels, we need to go through, and detect branches and jumps
     #start from the main label.
-    bjRegex = re.compile('(?:(?:beq|bne)\s+[^,-]*,[^,-]*,\s+(.*))|(?:(?:bgez|bgtz|blez|bltz)\s+[^,-]*,\s+(.*)]|(j|jal|jr|jalr|)\s+(.*))')
-    
+
+    threeArgBranchRegex = re.compile('(?:beq|bne)\s+[^,-]*,[^,-]*,\s+(.*)')
+    twoArgBranchRegex = re.compile('(?:bgez|bgtz|blez|bltz)\s+[^,-]*,\s+(.*)')
+    jumpRegex = re.compile('(?:j|jal|jr|jalr)\s+(.*)')
+    regexList = [threeArgBranchRegex, twoArgBranchRegex, jumpRegex]
     for (label, code) in labeledCode:
         graph.place_pointer(label)
     
     
         for line in code:
-
-
-            match = bjRegex.match(line)
-            if match == None:
+            match = matchAgainstRegexList(regexList, line)
+            if match == False:
                 #then not a jump or branch
                 graph.add_code_line(line)
             else:
@@ -120,7 +130,9 @@ def getGraph(mipsCode):
                 elif line.startswith('j'):
                     print('jumping')
                     print(line)
-                    graph.add_edge(match.group(1))
+                    target = match.group(1)
+                    print(target)
+                    graph.add_edge(target)
     
 
     
