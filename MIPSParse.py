@@ -51,9 +51,6 @@ class ProgramSectionGraph:
         self.graph.add_edge(self.pointer, label)
 
     def add_code_line(self, line):
-        print(line)
-        print(self.pointer)
-        print(self.sectionMap)
         self.sectionMap[self.pointer].add_code_line(line)
     #return networkx object
     def getNetworkXGraph(self):
@@ -101,18 +98,25 @@ def getGraph(mipsCode):
     #now that we have a labels, we need to go through, and detect branches and jumps
     #start from the main label.
     bjRegex = re.compile('(?:(?:beq|bne)\s+[^,-]*,[^,-]*,\s+(.*))|(?:(?:bgez|bgtz|blez|bltz)\s+[^,-]*,\s+(.*)]|(j|jal|jr|jalr|)\s+(.*))')
+    
     for (label, code) in labeledCode:
         graph.place_pointer(label)
+    
+    
         for line in code:
+
+
             match = bjRegex.match(line)
             if match == None:
                 #then not a jump or branch
                 graph.add_code_line(line)
             else:
                 #so if it's a branch, then do the split_node_connect
-                if re.match('\s+b', line) != None:
+                if line.startswith('b'):
                     graph.split_node_connect(match.group(1))
-                elif re.match('\s+j', line) != None:
+                elif line.startswith('j'):
+                    print('jumping')
+                    print(line)
                     graph.add_edge(match.group(1))
     
 
@@ -130,4 +134,5 @@ with open('simple.asm', 'r') as asmFile:
     nx.draw(graph)
     
     plt.savefig('simple.png')
+    print('graph')
     
