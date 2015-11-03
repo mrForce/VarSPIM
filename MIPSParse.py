@@ -1,4 +1,5 @@
 import networkx as nx
+import matplotlib.pyplot as plt
 import re
 
 class ProgramSection:
@@ -10,7 +11,7 @@ class ProgramSection:
         self.code_lines.append(line)
 
     def __hash__(self):
-        return self.label
+        return self.label.__hash__()
 
 """
 Three methods:
@@ -23,11 +24,11 @@ Three methods:
 
 class ProgramSectionGraph:
     def __init__(self):
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
         self.pointer = None
         #maps label to ProgramSection instance
         self.sectionMap = dict()
-    def placePointer(self, label):
+    def place_pointer(self, label):
         self.pointer = label
 
     #takes instance of ProgramSection
@@ -40,6 +41,7 @@ class ProgramSectionGraph:
         #this is B, the result of spliting the node.
         #this is usually in the context of branches.
         child_section = ProgramSection(self.pointer + '*')
+        self.sectionMap[self.pointer + '*'] = child_section
         self.graph.add_node(child_section)
         self.graph.add_edge(self.pointer, self.pointer + '*')
         self.graph.add_edge(self.pointer, label)
@@ -48,9 +50,14 @@ class ProgramSectionGraph:
     def add_edge(self, label):
         self.graph.add_edge(self.pointer, label)
 
-    def add_code_line(line):
+    def add_code_line(self, line):
+        print(line)
+        print(self.pointer)
+        print(self.sectionMap)
         self.sectionMap[self.pointer].add_code_line(line)
-        
+    #return networkx object
+    def getNetworkXGraph(self):
+        return self.graph
 #pass in text of assembly
 #returns an instance of the ProgramSectionGraph class.
 def getGraph(mipsCode):
@@ -70,7 +77,7 @@ def getGraph(mipsCode):
     currentCode = []
     #assume only one label per line -- I'm not sure if this is in the MIPS specs, but if it becomes a problem, I will deal with it later.
     for line in mipsLines:
-        if ':' in labels:
+        if ':' in line:
             if currentLabel != None:
                 labeledCode.append((currentLabel, currentCode))
                 
@@ -95,6 +102,7 @@ def getGraph(mipsCode):
     #start from the main label.
     bjRegex = re.compile('(?:(?:beq|bne)\s+[^,-]*,[^,-]*,\s+(.*))|(?:(?:bgez|bgtz|blez|bltz)\s+[^,-]*,\s+(.*)]|(j|jal|jr|jalr|)\s+(.*))')
     for (label, code) in labeledCode:
+        graph.place_pointer(label)
         for line in code:
             match = bjRegex.match(line)
             if match == None:
@@ -108,10 +116,18 @@ def getGraph(mipsCode):
                     graph.add_edge(match.group(1))
     
 
+    
     return graph
         
 
 
 
 
-        
+with open('simple.asm', 'r') as asmFile:
+    asmText = asmFile.read()
+    
+    graph = getGraph(asmText).getNetworkXGraph()
+    nx.draw(graph)
+    
+    plt.savefig('simple.png')
+    
