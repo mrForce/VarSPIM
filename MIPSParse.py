@@ -1,7 +1,9 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import re
-
+"""
+Major issue to deal with (that's really difficult!): What about 'jr $ra', which is typically used to return to the instruction after the last jal or jalr instruction?
+"""
 class ProgramSection:
     def __init__(self, label):
         self.label = label
@@ -113,12 +115,18 @@ def getGraph(mipsCode):
     threeArgBranchRegex = re.compile('(?:beq|bne)\s+[^,-]*,[^,-]*,\s+(.*)')
     twoArgBranchRegex = re.compile('(?:bgez|bgtz|blez|bltz)\s+[^,-]*,\s+(.*)')
     jumpRegex = re.compile('(?:j|jal|jr|jalr)\s+(.*)')
+    jumpNoReturnRegex = re.compile('(?:j|jr)\s+(.*)')
     regexList = [threeArgBranchRegex, twoArgBranchRegex, jumpRegex]
+    #If we can go from a label to the label immediately after it in the code, then set this to true
+    connectToLastLabel = False
     for (label, code) in labeledCode:
+        if connectToLastLabel:
+            graph.add_edge(label)
         graph.place_pointer(label)
     
-    
-        for line in code:
+
+        for i in range(0, len(code)):
+            line = code[i]
             match = matchAgainstRegexList(regexList, line)
             if match == False:
                 #then not a jump or branch
@@ -126,15 +134,23 @@ def getGraph(mipsCode):
             else:
                 #so if it's a branch, then do the split_node_connect
                 if line.startswith('b'):
-                    graph.split_node_connect(match.group(1))
+                    #if we are the last line of the function, then don't do the splitting
+                    #instead, add the edge from the current node to the branch target. 
+                    if i < len(code) - 1:
+                        graph.split_node_connect(match.group(1))
+                    else:
+                        graph.add_edge(match.group(1))
+
                 elif line.startswith('j'):
                     print('jumping')
                     print(line)
                     target = match.group(1)
                     print(target)
                     graph.add_edge(target)
-    
-
+        #if the last line was not a jump, then we will need to connect this label to the next label.
+        if jumpNoReturnRegex.match(code[-1]) == None:
+            connectToLastLabel = True
+            
     
     return graph
         
