@@ -52,7 +52,7 @@ class ProgramSectionGraph:
         self.sectionMap[self.pointer].add_code_line(line)
         
 #pass in text of assembly
-#returns a graph representing the code. Edges are jumps or branches.
+#returns an instance of the ProgramSectionGraph class.
 def getGraph(mipsCode):
     
     #first, remove all whitespace from the start and end of the lines
@@ -107,9 +107,8 @@ def getGraph(mipsCode):
                 elif re.match('\s+j', line) != None:
                     graph.add_edge(match.group(1))
     
-        
-        
-        
+
+    return graph
         
 
 
