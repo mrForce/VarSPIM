@@ -54,6 +54,7 @@ class ProgramSectionGraph:
 #pass in text of assembly
 #returns a graph representing the code. Edges are jumps or branches.
 def getGraph(mipsCode):
+    
     #first, remove all whitespace from the start and end of the lines
     mipsLines = map(lambda x: x.strip(), mipsCode.split('\n'))
 
@@ -92,9 +93,20 @@ def getGraph(mipsCode):
 
     #now that we have a labels, we need to go through, and detect branches and jumps
     #start from the main label.
-    for (label, code) in itertools.dropwhile(lambda z: z[0] != 'main', labeledCode):
+    bjRegex = re.compile('(?:(?:beq|bne)\s+[^,-]*,[^,-]*,\s+(.*))|(?:(?:bgez|bgtz|blez|bltz)\s+[^,-]*,\s+(.*)]|(j|jal|jr|jalr|)\s+(.*))')
+    for (label, code) in labeledCode:
         for line in code:
-            
+            match = bjRegex.match(line)
+            if match == None:
+                #then not a jump or branch
+                graph.add_code_line(line)
+            else:
+                #so if it's a branch, then do the split_node_connect
+                if re.match('\s+b', line) != None:
+                    graph.split_node_connect(match.group(1))
+                elif re.match('\s+j', line) != None:
+                    graph.add_edge(match.group(1))
+    
         
         
         
