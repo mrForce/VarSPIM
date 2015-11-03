@@ -13,6 +13,9 @@ class ProgramSection:
     def __hash__(self):
         return self.label.__hash__()
 
+    def __repr__(self):
+        return self.label
+    
 """
 Three methods:
     add_label('label')
@@ -131,7 +134,7 @@ with open('simple.asm', 'r') as asmFile:
     asmText = asmFile.read()
     
     graph = getGraph(asmText).getNetworkXGraph()
-    nx.draw(graph)
+    nx.draw_networkx(graph)
     
     plt.savefig('simple.png')
     print('graph')
