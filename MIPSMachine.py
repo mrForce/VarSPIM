@@ -1,3 +1,5 @@
+from functools import partial
+import re
 """
 This class is used to simulate MIPS. It does several things:
 
@@ -183,6 +185,47 @@ class MIPStack:
                 raise StackElementNotBoundedError(self.stackPointerOffset)
 
 
+
+class MIPSMemory:
+    def __init__(self, registers, stack):
+        self.registers = registers
+        self.stack = stack
+    def getRegisters(self):
+        return self.registers
+
+    def getStack(self):
+        return self.stack
+
+
+def bindRegister(register, varName, registerObject):
+    #todo: fill this in
+    pass
+
+def bindStackElement(stackLocation, varName, stackObject):
+    #todo: fill this in
+    pass
+
+
+
+def parseComment(comment):
+    """
+    Args:
+        comment: the comment; a string.
+    Returns:
+        A list of functions to execute. Can be empty. The arg of each function is an instance of the MIPSMemory class 
+    """
+    bindRe = re.compile('\$BIND:(\S+):(\S+)')
+    unbindRe = re.compile('\$UNBIND:(\S+)')
+    verifyRe = re.compile('\$VERIFY:(\S+)')
+    actions = list()
+    binds = [(m.start(1), m.group(1), m.group(2)) for m in bindRe.finditer(comment)]
+
+    unbinds = [(m.start(1), m.group(1)) for m in unbindRe.finditer(comment)]
+    verifies = [(m.start(1), m.group(1), m.group(2)) for m in verifyRe.finditer(comment)]
+    
+
+       
+            
 class MIPSMachine:
 
 
