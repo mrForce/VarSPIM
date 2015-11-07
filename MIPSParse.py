@@ -76,9 +76,9 @@ def getGraph(mipsCode):
     #first, remove all whitespace from the start and end of the lines
     mipsLines = map(lambda x: x.strip(), mipsCode.split('\n'))
 
-    #for each line, remove any section that comes after a '#'.
+    #for each line, remove any section that comes after a '#'. DON'T DO THIS!
     comment = re.compile('#')
-    mipsLines = map(lambda x: comment.split(x)[0], mipsLines)
+    #mipsLines = map(lambda x: comment.split(x)[0], mipsLines)
     #remove the lines that are empty
     mipsLines = filter(lambda x: len(x) > 0, mipsLines)
     #for each line, remove 
@@ -88,6 +88,9 @@ def getGraph(mipsCode):
     currentCode = []
     #assume only one label per line -- I'm not sure if this is in the MIPS specs, but if it becomes a problem, I will deal with it later.
     for line in mipsLines:
+        #Remove any part of the line that is a comment before the 'if' statement
+        rawLine = line
+        line = comment.split(line)[0]
         if ':' in line:
             if currentLabel != None:
                 labeledCode.append((currentLabel, currentCode))
@@ -96,11 +99,17 @@ def getGraph(mipsCode):
             currentLabel = splitLine[0]
             currentCode = []
             if len(splitLine) > 1:
-                currentCode.append(splitLine[1])
+                cSplit = comment.split(line)
+                
+                if len(cSplit) > 1:
+                    #then there was a comment in the line -- add to splitLine[1]
+                    currentCode.append(splitLine[1] + '#' + '#'.join(cSplit[1::]))
+                else:
+                    currentCode.append(splitLine[1])
                 
         else:
             if currentLabel != None:
-                currentCode.append(line)
+                currentCode.append(rawLine)
     if currentLabel != None:
         labeledCode.append((currentLabel, currentCode))
     
@@ -126,11 +135,14 @@ def getGraph(mipsCode):
     
 
         for i in range(0, len(code)):
-            line = code[i]
+            rawLine = code[i]
+            #we may have a comment in this line -- If that's the case, then remove the comment.
+            line = comment.split(rawLine)[0]
+            
             match = matchAgainstRegexList(regexList, line)
             if match == False:
                 #then not a jump or branch
-                graph.add_code_line(line)
+                graph.add_code_line(rawLine)
             else:
                 #so if it's a branch, then do the split_node_connect
                 if line.startswith('b'):
