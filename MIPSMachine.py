@@ -27,7 +27,8 @@ class StackPointerOutOfBoundsError(Exception):
 class StackElementNotBoundedError(Exception):
     def __init__(self, stackLocation):
         self.value = stackLocation
-        
+
+
 class MIPSRegisters:
     def __init__(self):
         self.register_names = ['$v0', '$v1', '$zero', '$a0', '$a1', '$a2', '$a3', '$t0', '$t1', '$t2', '$t3', '$t4', '$t5', '$t6', '$t7', '$s0', '$s1', '$s2', '$s3', '$s4', '$s5', '$s6', '$s7', '$t8', '$t9', '$ra']
@@ -197,15 +198,17 @@ class MIPSMemory:
         return self.stack
 
 
-def bindRegister(register, varName, registerObject):
+def bindRegister(register, varName, mipsMemory):
     #todo: fill this in
     pass
 
-def bindStackElement(stackLocation, varName, stackObject):
+def bindStackElement(stackLocation, varName, mipsMemory):
     #todo: fill this in
     pass
 
 
+
+    
 
 def parseComment(comment):
     """
@@ -213,13 +216,27 @@ def parseComment(comment):
         comment: the comment; a string.
     Returns:
         A list of functions to execute. Can be empty. The arg of each function is an instance of the MIPSMemory class 
-    """
-    bindRe = re.compile('\$BIND:(\S+):(\S+)')
-    unbindRe = re.compile('\$UNBIND:(\S+)')
-    verifyRe = re.compile('\$VERIFY:(\S+)')
-    actions = list()
-    binds = [(m.start(1), m.group(1), m.group(2)) for m in bindRe.finditer(comment)]
 
+    Raises:
+        BadElementError -- if the element given by a bind, verify or unbind statement is non-sensical.
+    """
+    bindRe = re.compile('\$BIND:([^\:]*):(\S+)') #We should allow for some space in the element location (especially if we're accessing the stack)
+    unbindRe = re.compile('\$UNBIND:(\S+)')
+    verifyRe = re.compile('\$VERIFY:([^\:]*):(\S+)')
+    isStackElementRe = re.compile('\s*(\d+)\s*\(\s*(\S{,5})\s*\)')
+    actions = list() # a list of tuples, of format (charIndex, actionFuntion)
+    registers = ['$v0', '$v1', '$zero', '$a0', '$a1', '$a2', '$a3', '$t0', '$t1', '$t2', '$t3', '$t4', '$t5', '$t6', '$t7', '$s0', '$s1', '$s2', '$s3', '$s4', '$s5', '$s6', '$s7', '$t8', '$t9', '$ra']
+    for m in bindRe.finditer(comment):
+        charIndex = m.start(1)
+        element = m.group(1)
+        varName = m.group(2)
+        #if element is one of the registers, then create a bindRegister partial function
+        if varName in registers:
+            actions.append(partial(bindRegister, register=element, varName=varName))
+        else:
+            stackElement = isStackElementRe.match(element)
+            if 
+        
     unbinds = [(m.start(1), m.group(1)) for m in unbindRe.finditer(comment)]
     verifies = [(m.start(1), m.group(1), m.group(2)) for m in verifyRe.finditer(comment)]
     
